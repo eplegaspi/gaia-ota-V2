@@ -16,15 +16,14 @@ from services.postgresql_service import connect_to_postgresql, insert_global_dat
 
 with DAG('extract_global_covid_data', 
          start_date=datetime(2021, 1, 1),
-         end_date=datetime(2023, 1, 2),
+         end_date=datetime(2024, 1, 1),
          catchup=True,
-         schedule_interval='@daily'
-        # # this will allow up to 4 dags to be run at the same time
-        # max_active_runs=1
+         schedule_interval='@daily',
+         max_active_runs=16
         ) as dag:
 
 
-    def filter_and_upload_to_minio(**kwargs):
+    def api_to_minio(**kwargs):
         ds = kwargs['ds']
         date = datetime.strptime(ds, '%Y-%m-%d').strftime('%m-%d-%Y')
         year = datetime.strptime(ds, '%Y-%m-%d').strftime('%Y')
@@ -48,11 +47,12 @@ with DAG('extract_global_covid_data',
             print("Skipping.")
 
 
-    def download_and_insert_to_postgresql(**kwargs):
+    def minio_to_warehouse(**kwargs):
         ds = kwargs['ds']
         date = datetime.strptime(ds, '%Y-%m-%d').strftime('%m-%d-%Y')
         year = datetime.strptime(ds, '%Y-%m-%d').strftime('%Y')
         month = datetime.strptime(ds, '%Y-%m-%d').strftime('%m')
+        file_date = datetime.strptime(ds, '%Y-%m-%d')
 
         minio_client = connect_to_minio()
 
@@ -70,26 +70,26 @@ with DAG('extract_global_covid_data',
 
             if connection:
                 batch_size = 100000
-                insert_global_data_into_postgresql(connection, df, batch_size)
+                insert_global_data_into_postgresql(connection, df, batch_size, file_date)
                 connection.close()
-        except minio.error.NoSuchKey:
+        except minio.error.S3Error:
             print("File not found.")
         except Exception as e:
             print(f"An error occurred: {e}")
 
 
-    filter_and_upload_task = PythonOperator(
-        task_id='filter_and_upload_to_minio_task',
-        python_callable=filter_and_upload_to_minio,
+    api_to_minio_task = PythonOperator(
+        task_id='api_to_minio',
+        python_callable=api_to_minio,
         provide_context=True
     )
     
 
-    download_and_insert_task = PythonOperator(
-        task_id='download_and_insert_to_postgresql_task',
-        python_callable=download_and_insert_to_postgresql,
+    minio_to_warehouse_task = PythonOperator(
+        task_id='minio_to_warehouse',
+        python_callable=minio_to_warehouse,
         provide_context=True
     )
 
 
-    filter_and_upload_task >> download_and_insert_task
+    api_to_minio_task >> minio_to_warehouse_task

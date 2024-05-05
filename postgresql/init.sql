@@ -34,7 +34,8 @@ CREATE TABLE raw.us_daily_reports_raw (
     Hospitalization_Rate DECIMAL(20, 10),
     Date DATE,
     People_Tested DECIMAL(20, 10),
-    Mortality_Rate DECIMAL(20, 10)
+    Mortality_Rate DECIMAL(20, 10),
+    File_Date DATE
 );
 
 CREATE TABLE raw.global_daily_reports_raw (
@@ -51,5 +52,6 @@ CREATE TABLE raw.global_daily_reports_raw (
     Active INT,
     Combined_Key VARCHAR(255),
     Incident_Rate DECIMAL(20, 10),
-    Case_Fatality_Ratio DECIMAL(20, 10)
+    Case_Fatality_Ratio DECIMAL(20, 10),
+    File_Date DATE
 );

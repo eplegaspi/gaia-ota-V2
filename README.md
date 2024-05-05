@@ -1,16 +1,21 @@
-# Analyzing NYC Yellow Taxi Trips
+# Analyzing Covid19 Data
 
 ## Project Overview
-This project outlines an Extract, Transform, Load (ETL) pipeline for processing NYC Yellow Taxi trip data using Dockerized infrastructure. The pipeline is orchestrated by Apache Airflow, with MySQL for metadata storage and Minio for data storage.
+This project outlines an Extract, Transform, Load (ETL) pipeline for processing Covid19 data using Dockerized infrastructure. The pipeline is orchestrated by Apache Airflow, with Postgresql for metadata storage and warehouse, dbt for data transformation, and Minio for data storage.
 
 ## Infrastructure Overview
-We'll utilize Docker Compose to manage our infrastructure, which consists of the following services:
 
-- **Airflow**: A platform to programmatically author, schedule, and monitor workflows. It will orchestrate our ETL process.
+![architecture](resources/architecture.png)
+
+Docker Compose will be utilize to manage our infrastructure, which consists of the following services:
+
+- **Airflow**: A platform to programmatically author, schedule, and monitor workflows. It will orchestrate the ETL process.
   
-- **MySQL**: A relational database management system. We'll use it to store metadata related to our ETL process, such as task statuses and execution dates.
+- **PostgreSQL**: PostgreSQL is now both the backend of Airflow and the data warehouse. It will handle metadata related to the ETL process, task statuses, execution dates, and serve as the central repository for analytics data. (Note: For ideal deployment, the airflow-backend and the data warehouse should be separated. But for this demo, it will be served both.)
   
-- **Minio**: An open-source object storage server compatible with Amazon S3 API. It will serve as the destination for our extracted data.
+- **Minio**: An open-source object storage server compatible with Amazon S3 API. It will serve as the initial destination of the extracted data.
+
+- **dbt (Data Build Tool)**: dbt works directly with the data in the warehouse, making it easy to build, test, and deploy data transformation pipelines. It allows for the creation of modular, version-controlled SQL transformations, and promotes code reusability and collaboration among team members.
 
 - **Metabase**: Metabase is an open-source business intelligence and analytics tool. It provides a simple interface for users to generate and share insights from their data. Metabase can connect to various data sources, including MySQL and Minio, allowing users to create visualizations, dashboards, and run ad-hoc queries on the data stored in these sources. It will provide a user-friendly interface for data exploration and reporting on the extracted and transformed data from your ETL process.
 
@@ -23,57 +28,72 @@ We'll utilize Docker Compose to manage our infrastructure, which consists of the
 6. Start the services with `docker-compose up`.
 
 ## Execution Instructions
-1. Access the Airflow web interface at `http://localhost:8080` (or the configured port).
-2. Log in using the username and password obtained from the Docker logs.
-![airflow password](readme_images/airflow-password.png)
-5. The `schedule_interval` is set to `None`. Run the Airflow DAG manually, passing the arguments `{"year": "<year>", "month": "<month>"}` to initiate the ETL process for the specified year and month.
-6. Monitor the workflow execution and view task statuses in the Airflow UI.
-![airflow](readme_images/airflow.png)
-![airflow](readme_images/execute_1.png)
-![airflow](readme_images/execute_2.png)
+1. Access the Airflow web interface at `http://localhost:8080` (Use `Username`: `airflow` and `Password` : `airflow`).
+2. Turn on first the DAG for `extract_global_covid_data`.
+3. Monitor the workflow execution and view task statuses in the Airflow UI.
+
+![airflow](resources/airflow_tasks.png)
+
 7. Access the Minio dashboard at `http://localhost:9001` to verify data storage.
-8. Access MySQL using `Username: root, Password: admin` to interact with the db storage.
-![mysql](readme_images/mysql.png)
 
+![minio_interface](resources/minio_interface.png)
+![minio_data](resources/minio_data.png)
 
-## Visualization
-To visualize the processed data, you can execute SQL queries against the MySQL database. For example, to obtain the total amount of taxi trips per day after January 1, 2024, you can use the following SQL query:
+8. Access PostgresSQL using `Username: root, Password: admin` to interact with the db storage.
 
-```sql
-SELECT 
-    DATE(tpep_pickup_datetime) AS trip_date,
-    SUM(Total_amount) AS total_amount_per_day
-FROM 
-    trip_schema.trip_data
-WHERE 
-    DATE(tpep_pickup_datetime) >= '2024-01-01'
-GROUP BY 
-    DATE(tpep_pickup_datetime);
-```
-![viz](readme_images/viz.png)
+![mysql](resources/schema.png)
+![mysql](resources/raw.png)
 
 ## Insights
 Extraction: 
-- I visited the provided URL and identified the dataset containing the yellow taxi trip records. When I check the URL, it downloads a parquet file.
+- I visited the provided URL and identified the dataset containing the covid19 data. When I check the URL, it shows a csv file.
 - The URL format allows for easy dynamic changes, facilitating dynamic data extraction.
-- Utilizing direct download methods, I created a python-script to get the data for the specified month.
+- Utilizing direct download methods, I created a python-script to get the data by utilizing its dynamic file naming.
 
 Loading and Cleaning: 
-- Once the data was obtained, I loaded it first to a storage. In this particular instance, I used Minio as a staging layer.
+- Once the data have been obtained, I loaded it first to a storage. In this particular instance, I used Minio as a staging layer.
 - Note: For production, I'll highly suggest cloud storage such as google cloud storage or AWS S3
-- Once the data is in staging layer, I loaded it to a dataframe and filtered out the trips with zero passengers and then inserted the data to mysql
+- Once the data is in staging layer, I loaded it to a dataframe and push push it to postgresql (acting as a warehouse).
 - Note: For production, I'll highly suggest BigQuery for data warehousing.
-- Note: For data processing and data transformation, I'll highly suggest Spark or DBT.
 
-Database Setup: 
-- To persist the cleaned data, I opted for a SQL database. 
-- However, I encountered challenges when attempting to insert a large volume of data into MySQL. 
-- The sheer size of the dataset posed a bottleneck, causing performance issues during insertion.
-- To overcome this challenge, I implemented batch insertion techniques. 
-- Instead of inserting each row individually, I grouped the data into manageable batches and inserted them into the database in chunks. 
-- This significantly improved insertion performance and reduced resource overhead.
+Transformations:
+- I leverage dbt to handle data transformations primarily within SQL, ensuring that the visualization focuses on presenting insights rather than complex data processing.
+- This is also very useful in saving queries. Rather than crafting queries directly in the presentation layer, they can be generated and stored within dbt, streamlining the process and enhancing organization.
+- *Raw Data* : Data loaded “as is” from source. It could be a production database, API,  analytics or any other data source. This data shouldn’t be used directly in reports. It should go first trough staging data stage
+- *Source Data* : Rename fields to user-friendly names. Minimal transformations that are 100% guaranteed to be useful for the foreseeable future.
+- *Staging Data* : Clean and organized version of Source Data. It will be used to build Data Marts.
+- *Marts* : Models describe business entities and processes.
 
 Aggregation and Visualization: 
-- With the clean data loaded into the database, I performed aggregation to calculate the total amount per day. 
-- Using SQL queries, I aggregated the data based on date and computed the total amount for each day. 
-- Finally, I visualized the aggregated results using Metabase dashboard.
+- With the clean data loaded into the database, I performed aggregation to calculate the highest number of cases for confirmed/deaths.
+- Using SQL queries, I performed some data manipulation so that I can track the changes by day for confirmed, active, deaths, and recovered.
+
+## Data Analysis: COVID-19 in the World
+![summary](resources/Summary.png)
+
+As can be seen from the summary, the count of total cases of COVID-19 in the World reported from 2020-Jan-04 to 2023-March-10 was 606.5 millions. The total death was about 5.3 million (or 0.88% of the cases).
+
+The leading countries in total cases:
+| Country      | Total Cases (in millions) |
+|--------------|---------------------------|
+| United States| 89.282                    |
+| Germany      | 37.869                    |
+| France       | 37.587                    |
+| India        | 34.880                    |
+| Japan        | 34.238                    |
+
+The leading countries in death cases:
+| Country      | Total Cases               |
+|--------------|---------------------------|
+| United States| 862,59                    |
+| Brazil       | 504,533                   |
+| Peru         | 395,055                   |
+| India        | 382,367                   |
+| Russia       | 331,813                   |
+
+![summary](resources/across_time.png)
+
+As we can see, at the beginning of 2022, we had an sudden growth in the total number of cases. However, as we can see from the trendline from the `Daily deaths of Covid-19`, the overall trend is going down and the increase in deaths began to slow along 2022.
+
+### Conclusion
+The summary shows that between January 2020 and March 2023, the world had a huge number of COVID-19 cases, reaching over 600 million, causing around 5.3 million deaths. The United States had the most cases and deaths, followed by countries like Germany, France, Brazil, and India. Although there was a sharp increase in cases at the start of 2022, the graph of daily deaths indicates a downward trend, suggesting that the situation gradually improved over time.

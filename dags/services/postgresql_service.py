@@ -22,7 +22,7 @@ def batch_generator(df, batch_size):
     for i in range(num_batches):
         yield df.iloc[i * batch_size: (i + 1) * batch_size], i + 1, total_batches
 
-def insert_us_data_into_postgresql(connection, df, batch_size):
+def insert_us_data_into_postgresql(connection, df, batch_size, file_date):
     with connection.cursor() as cursor:
         for batch_df, batch_num, total_batches in batch_generator(df, batch_size):
             batch_data = []
@@ -48,7 +48,8 @@ def insert_us_data_into_postgresql(connection, df, batch_size):
                     row.get('Hospitalization_Rate', None),
                     row.get('Date', None),
                     row.get('People_Tested', None),
-                    row.get('Mortality_Rate', None)
+                    row.get('Mortality_Rate', None),
+                    file_date
                 )
                 row_data = tuple(None if pd.isna(value) else value for value in row_data)
                 batch_data.append(row_data)
@@ -58,9 +59,9 @@ def insert_us_data_into_postgresql(connection, df, batch_size):
                     INSERT INTO raw.us_daily_reports_raw
                     (Province_State, Country_Region, Last_Update, Lat, Long_, Confirmed, Deaths, Recovered, Active, FIPS,
                     Incident_Rate, Total_Test_Results, People_Hospitalized, Case_Fatality_Ratio, UID, ISO3, Testing_Rate,
-                    Hospitalization_Rate, Date, People_Tested, Mortality_Rate)
+                    Hospitalization_Rate, Date, People_Tested, Mortality_Rate, file_date)
                     VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             print(f"stmt: {stmt}")
@@ -68,7 +69,7 @@ def insert_us_data_into_postgresql(connection, df, batch_size):
             connection.commit()
             print(f"Inserted batch {batch_num}/{total_batches} into the database.")
 
-def insert_global_data_into_postgresql(connection, df, batch_size):
+def insert_global_data_into_postgresql(connection, df, batch_size, file_date):
     with connection.cursor() as cursor:
         for batch_df, batch_num, total_batches in batch_generator(df, batch_size):
             batch_data = []
@@ -87,7 +88,8 @@ def insert_global_data_into_postgresql(connection, df, batch_size):
                     row.get('Active', None),
                     row.get('Combined_Key', None),
                     row.get('Incident_Rate', None),
-                    row.get('Case_Fatality_Ratio', None)
+                    row.get('Case_Fatality_Ratio', None),
+                    file_date
                 )
                 row_data = tuple(None if pd.isna(value) else value for value in row_data)
                 batch_data.append(row_data)
@@ -96,9 +98,9 @@ def insert_global_data_into_postgresql(connection, df, batch_size):
             stmt = """
                     INSERT INTO raw.global_daily_reports_raw
                     (FIPS, Admin2, Province_State, Country_Region, Last_Update, Lat, Long_, Confirmed, Deaths, Recovered, Active, Combined_Key,
-                    Incident_Rate, Case_Fatality_Ratio)
+                    Incident_Rate, Case_Fatality_Ratio, file_date)
                     VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             print(f"stmt: {stmt}")

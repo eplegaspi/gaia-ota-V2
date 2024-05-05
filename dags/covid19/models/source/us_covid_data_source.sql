@@ -1,5 +1,6 @@
 WITH initial_source AS (
     SELECT 
+        DISTINCT
         province_state,
         country_region,
         last_update,
