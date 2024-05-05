@@ -44,7 +44,7 @@ Docker Compose will be utilize to manage our infrastructure, which consists of t
 ![mysql](resources/schema2.png)
 ![mysql](resources/raw.png)
 
-9. Back to Airflow, turn on the `covid19_dag` to perform the transformations.
+9. Back to Airflow, turn on the `covid19_dbt` to perform the transformations.
 
 ![covid19_dag](resources/dbt_dag.png)
 ![dbt_run](resources/dbt_run.png)
