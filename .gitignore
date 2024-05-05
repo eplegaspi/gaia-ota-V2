@@ -1,0 +1,5 @@
+dbt/dbt-venv/
+
+dags/covid19/target/
+dags/covid19/dbt_packages/
+dags/covid19/logs/
