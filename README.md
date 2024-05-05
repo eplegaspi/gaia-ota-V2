@@ -1,4 +1,4 @@
-# Analyzing Covid19 Data
+# Analyzing Covid-19 Data
 
 ## Project Overview
 This project outlines an Extract, Transform, Load (ETL) pipeline for processing Covid19 data using Dockerized infrastructure. The pipeline is orchestrated by Apache Airflow, with Postgresql for metadata storage and warehouse, dbt for data transformation, and Minio for data storage.
