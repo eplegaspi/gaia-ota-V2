@@ -41,7 +41,7 @@ Docker Compose will be utilize to manage our infrastructure, which consists of t
 
 8. Access PostgresSQL using `Username: root, Password: admin` to interact with the db storage.
 
-![mysql](resources/schema.png)
+![mysql](resources/schema2.png)
 ![mysql](resources/raw.png)
 
 ## Insights
