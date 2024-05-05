@@ -39,7 +39,7 @@ Docker Compose will be utilize to manage our infrastructure, which consists of t
 ![minio_interface](resources/minio_interface.png)
 ![minio_data](resources/minio_data.png)
 
-8. Access PostgresSQL using `Username: root, Password: admin` to interact with the db storage.
+8. Access PostgresSQL using `Username: root, Password: admin` to interact with the db storage. There's an `postgresql/init.sql`  that is used to initialize the PostgreSQL database when the container starts up. It contains commands creating tables and schemas.
 
 ![mysql](resources/schema2.png)
 ![mysql](resources/raw.png)
