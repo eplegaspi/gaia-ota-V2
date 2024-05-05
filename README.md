@@ -44,6 +44,12 @@ Docker Compose will be utilize to manage our infrastructure, which consists of t
 ![mysql](resources/schema2.png)
 ![mysql](resources/raw.png)
 
+9. Back to Airflow, turn on the `covid19_dag` to perform the transformations.
+
+![covid19_dag](resources/dbt_dag.png)
+![dbt_run](resources/dbt_run.png)
+
+
 ## Insights
 Extraction: 
 - I visited the provided URL and identified the dataset containing the covid19 data. When I check the URL, it shows a csv file.
