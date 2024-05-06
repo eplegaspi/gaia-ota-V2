@@ -5,7 +5,7 @@ This project outlines an Extract, Transform, Load (ETL) pipeline for processing 
 
 ## Infrastructure Overview
 
-![architecture](resources/architecture4.png)
+![architecture](resources/architecture5.png)
 
 Docker Compose will be utilize to manage our infrastructure, which consists of the following services:
 
