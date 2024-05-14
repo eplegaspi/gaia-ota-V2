@@ -60,7 +60,7 @@ Loading and Cleaning:
 - Once the data have been obtained, I loaded it first to a storage. In this particular instance, I used Minio as a staging layer.
 - Note: For production, I'll highly suggest cloud storage such as google cloud storage or AWS S3
 - Once the data is in staging layer, I loaded it to a dataframe and push push it to postgresql (acting as a warehouse).
-- Note: For production, I'll highly suggest BigQuery for data warehousing.
+- Note: For production, I'll highly suggest AWS Redshift for data warehousing.
 
 Transformations:
 - I leverage dbt to handle data transformations primarily within SQL, ensuring that the visualization focuses on presenting insights rather than complex data processing.
