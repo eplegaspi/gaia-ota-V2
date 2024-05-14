@@ -7,8 +7,17 @@ with DAG('covid19_dbt',
          catchup=False,
          schedule_interval='@daily'
         ) as dag:
-    run_dbt_model = BashOperator(
-        task_id='run_dbt_model',
+    
+    dbt_run = BashOperator(
+        task_id='dbt_run',
         bash_command='dbt run --project-dir=/opt/airflow/dags/covid19 --profiles-dir=/opt/airflow/dags/covid19/profiles',
         dag=dag
     )
+
+    dbt_test = BashOperator(
+        task_id='dbt_test',
+        bash_command='dbt test --project-dir=/opt/airflow/dags/covid19 --profiles-dir=/opt/airflow/dags/covid19/profiles',
+        dag=dag
+    )
+
+    dbt_run >> dbt_test

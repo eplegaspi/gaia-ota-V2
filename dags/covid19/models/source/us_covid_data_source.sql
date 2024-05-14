@@ -17,7 +17,8 @@ WITH initial_source AS (
         uid,
         iso3,
         testing_rate,
-        date
+        date,
+        file_date
     FROM raw.us_daily_reports_raw
 )
 SELECT *

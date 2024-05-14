@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: global_covid_data_source
+    columns:
+      - name: file_date
+        tests:
+          - not_null
