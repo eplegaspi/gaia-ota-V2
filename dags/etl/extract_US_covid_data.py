@@ -66,12 +66,12 @@ with DAG('extract_US_covid_data',
 
             df = pd.read_csv(f"{year}/{month}/{date}.csv", header=0)
 
-            connection = connect_to_postgresql()
+            postgresql_conn = connect_to_postgresql()
 
-            if connection:
+            if postgresql_conn:
                 batch_size = 100000
-                insert_us_data_into_postgresql(connection, df, batch_size, file_date)
-                connection.close()
+                insert_us_data_into_postgresql(postgresql_conn, df, batch_size, file_date)
+                postgresql_conn.close()
         except minio.error.S3Error:
             print("File not found.")
         except Exception as e:
