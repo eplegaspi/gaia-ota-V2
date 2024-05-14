@@ -24,8 +24,10 @@ Docker Compose will be utilize to manage our infrastructure, which consists of t
 1. Clone the repository from GitHub:
 2. Install Docker and Docker Compose if not already installed on your system.
 3. Navigate to the project directory.
-5. Build the Docker containers using `docker-compose build`.
-6. Start the services with `docker-compose up`.
+4. Build the Docker containers using `docker-compose build`.
+5. Start the services with `docker-compose up`.
+
+**Note**: For simplicity's sake, the credentials are stored in a `.env` file. **This should be avoided in production.** Instead, consider using a more secure method for managing secrets, such as AWS Secrets Manager.
 
 ## Execution Instructions
 1. Access the Airflow web interface at `http://localhost:8080` (Use `Username`: `airflow` and `Password` : `airflow`).

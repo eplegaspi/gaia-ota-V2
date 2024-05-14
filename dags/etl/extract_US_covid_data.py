@@ -2,17 +2,28 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
-
+import os
 
 # 3rd party imports
 import pandas as pd
 import minio.error
-
+from dotenv import load_dotenv
 
 # local imports
-from services.minio_service import connect_to_minio, fetch_file_from_url, store_file_in_minio, download_parquet_from_minio
-from services.postgresql_service import connect_to_postgresql, insert_us_data_into_postgresql
+from services.minio_service import MinioConnector
+from services.postgresql_service import PostgresConnector
 
+load_dotenv()
+
+minio_endpoint = os.getenv('MINIO_ENDPOINT')
+minio_access_key = os.getenv('MINIO_ACCESS_KEY')
+minio_secret_key = os.getenv('MINIO_SECRET_KEY')
+
+postgres_user = os.getenv('POSTGRES_USER')
+postgres_password = os.getenv('POSTGRES_PASSWORD')
+postgres_host = os.getenv('POSTGRES_HOST')
+postgres_port = os.getenv('POSTGRES_PORT')
+postgres_db = os.getenv('POSTGRES_DB')
 
 with DAG('extract_US_covid_data', 
          start_date=datetime(2021, 1, 1),
@@ -31,13 +42,12 @@ with DAG('extract_US_covid_data',
         api_url = f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/{date}.csv"
         print(api_url)
 
-        minio_client = connect_to_minio()
+        minio_conn = MinioConnector(minio_endpoint, minio_access_key, minio_secret_key)
 
-        file_stream = fetch_file_from_url(api_url)
+        file_stream = minio_conn.fetch_file_from_url(api_url)
 
         if file_stream:
-            store_file_in_minio(
-                minio_client,
+            minio_conn.store_file(
                 "coviddata",
                 f"US/{year}/{month}/{date}.csv",
                 file_stream,
@@ -54,11 +64,10 @@ with DAG('extract_US_covid_data',
         month = datetime.strptime(ds, '%Y-%m-%d').strftime('%m')
         file_date = datetime.strptime(ds, '%Y-%m-%d')
 
-        minio_client = connect_to_minio()
+        minio_conn = MinioConnector(minio_endpoint, minio_access_key, minio_secret_key)
 
         try:
-            download_parquet_from_minio(
-                minio_client,
+            minio_conn.download_file(
                 "coviddata",
                 f"US/{year}/{month}/{date}.csv",
                 f"{year}/{month}/{date}.csv"
@@ -66,12 +75,17 @@ with DAG('extract_US_covid_data',
 
             df = pd.read_csv(f"{year}/{month}/{date}.csv", header=0)
 
-            postgresql_conn = connect_to_postgresql()
+            postgresql_conn = PostgresConnector(
+                user=postgres_user,
+                password=postgres_password,
+                host=postgres_host,
+                port=postgres_port,
+                database=postgres_db
+            )
 
-            if postgresql_conn:
-                batch_size = 100000
-                insert_us_data_into_postgresql(postgresql_conn, df, batch_size, file_date)
-                postgresql_conn.close()
+            batch_size = 100000
+            postgresql_conn.insert_us_data(postgresql_conn, df, batch_size, file_date)
+            postgresql_conn.close_connection()
         except minio.error.S3Error:
             print("File not found.")
         except Exception as e:

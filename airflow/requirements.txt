@@ -6,3 +6,4 @@ minio==7.2.5
 psycopg2-binary==2.9.9
 agate==1.7.0
 dbt-postgres==1.7.14
+python-dotenv==1.0.0
